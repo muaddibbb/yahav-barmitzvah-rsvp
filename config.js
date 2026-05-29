@@ -10,7 +10,7 @@ const EVENT_CONFIG = {
   extraNote: "טקס הנחת תפילין בשעה 16:00 — בית הכנסת בית מנחם, רחוב בן צבי 6, קריית מוצקין", // הערה נוספת לאורחים (אופציונלי)
 
   // לאחר פריסת Google Apps Script - הדבק כאן את ה-URL
-  scriptUrl: "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbxsbwC4IKRaV2fSp2I6Ci7LtXMB7g6wdByR7kVBF22rv1GXNyh3MHT0rTzH1-erM996/exec",
 
   // סיסמת הדשבורד
   dashboardPassword: "admin1234",
