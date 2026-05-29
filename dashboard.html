@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>דשבורד אישורים</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="page" id="loginPage">
+    <header class="hero hero--small">
+      <div class="star-of-david">✡</div>
+      <h1 class="event-title" id="loginTitle"></h1>
+      <p class="invite-text">ניהול אישורים</p>
+    </header>
+    <section class="form-card">
+      <h2 class="form-title">כניסה</h2>
+      <div class="form-group">
+        <label for="password">סיסמה</label>
+        <input type="password" id="password" placeholder="הזן סיסמה" onkeydown="if(event.key==='Enter') login()" />
+      </div>
+      <button class="submit-btn" onclick="login()">כניסה</button>
+      <div class="error-banner" id="loginError" style="display:none; margin-top:12px; position:static; border-radius:8px;">
+        סיסמה שגויה
+      </div>
+    </section>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboardPage" style="display:none">
+    <div class="dashboard-header">
+      <div>
+        <h1 class="dash-title" id="dashTitle"></h1>
+        <p class="dash-sub">רשימת אישורי הגעה</p>
+      </div>
+      <div class="dash-actions">
+        <button class="icon-btn" onclick="loadRSVPs()" title="רענן">🔄 רענן</button>
+        <button class="icon-btn" onclick="exportCSV()" title="ייצא">📥 ייצא CSV</button>
+        <a href="index.html" class="icon-btn">← דף האורחים</a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card stat-total">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">סה"כ משיבים</div>
+      </div>
+      <div class="stat-card stat-yes">
+        <div class="stat-num" id="statYes">0</div>
+        <div class="stat-label">מגיעים</div>
+      </div>
+      <div class="stat-card stat-no">
+        <div class="stat-num" id="statNo">0</div>
+        <div class="stat-label">לא מגיעים</div>
+      </div>
+      <div class="stat-card stat-guests">
+        <div class="stat-num" id="statGuests">0</div>
+        <div class="stat-label">סה"כ אורחים</div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">הכל</button>
+      <button class="filter-btn" data-filter="yes" onclick="setFilter('yes', this)">מגיעים</button>
+      <button class="filter-btn" data-filter="no" onclick="setFilter('no', this)">לא מגיעים</button>
+      <input type="text" class="search-input" id="searchInput" placeholder="חיפוש לפי שם..." oninput="renderTable()" />
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="loading" id="loadingState">טוען נתונים...</div>
+      <div class="empty-state" id="emptyState" style="display:none">אין נתונים עדיין</div>
+      <table class="rsvp-table" id="rsvpTable" style="display:none">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>שם</th>
+            <th>הגעה</th>
+            <th>מספר אורחים</th>
+            <th>הערות</th>
+            <th>זמן הרשמה</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    let allRSVPs = [];
+    let currentFilter = "all";
+
+    document.getElementById("loginTitle").textContent = EVENT_CONFIG.name;
+    document.getElementById("dashTitle").textContent = EVENT_CONFIG.name;
+
+    function login() {
+      const pw = document.getElementById("password").value;
+      if (pw === EVENT_CONFIG.dashboardPassword) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("dashboardPage").style.display = "block";
+        loadRSVPs();
+      } else {
+        document.getElementById("loginError").style.display = "block";
+      }
+    }
+
+    async function loadRSVPs() {
+      document.getElementById("loadingState").style.display = "block";
+      document.getElementById("rsvpTable").style.display = "none";
+      document.getElementById("emptyState").style.display = "none";
+
+      try {
+        const res = await fetch(EVENT_CONFIG.scriptUrl + "?action=get");
+        const data = await res.json();
+        allRSVPs = data.rows || [];
+        updateStats();
+        renderTable();
+      } catch (err) {
+        document.getElementById("loadingState").textContent =
+          "שגיאה בטעינת הנתונים. ודא שה-scriptUrl מוגדר נכון ב-config.js";
+      }
+    }
+
+    function updateStats() {
+      const yes = allRSVPs.filter((r) => r.attending === "yes");
+      const no = allRSVPs.filter((r) => r.attending === "no");
+      const totalGuests = yes.reduce((s, r) => s + (parseInt(r.guests) || 0), 0);
+
+      document.getElementById("statTotal").textContent = allRSVPs.length;
+      document.getElementById("statYes").textContent = yes.length;
+      document.getElementById("statNo").textContent = no.length;
+      document.getElementById("statGuests").textContent = totalGuests;
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderTable();
+    }
+
+    function renderTable() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allRSVPs.filter((r) => {
+        const matchFilter = currentFilter === "all" || r.attending === currentFilter;
+        const matchSearch = r.name.toLowerCase().includes(search);
+        return matchFilter && matchSearch;
+      });
+
+      document.getElementById("loadingState").style.display = "none";
+
+      if (filtered.length === 0) {
+        document.getElementById("emptyState").style.display = "block";
+        document.getElementById("rsvpTable").style.display = "none";
+        return;
+      }
+
+      document.getElementById("emptyState").style.display = "none";
+      document.getElementById("rsvpTable").style.display = "table";
+
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = filtered
+        .map(
+          (r, i) => `
+        <tr>
+          <td class="cell-num">${i + 1}</td>
+          <td class="cell-name">${escHtml(r.name)}</td>
+          <td>
+            <span class="badge ${r.attending === "yes" ? "badge-yes" : "badge-no"}">
+              ${r.attending === "yes" ? "✅ מגיע" : "❌ לא מגיע"}
+            </span>
+          </td>
+          <td class="cell-center">${r.attending === "yes" ? (r.guests || 1) : "—"}</td>
+          <td class="cell-notes">${escHtml(r.notes || "")}</td>
+          <td class="cell-time">${escHtml(r.timestamp || "")}</td>
+        </tr>`
+        )
+        .join("");
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function exportCSV() {
+      const headers = ["שם", "הגעה", "מספר אורחים", "הערות", "זמן"];
+      const rows = allRSVPs.map((r) => [
+        r.name,
+        r.attending === "yes" ? "מגיע" : "לא מגיע",
+        r.attending === "yes" ? r.guests : 0,
+        r.notes || "",
+        r.timestamp || "",
+      ]);
+      const csv = [headers, ...rows]
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "rsvp-list.csv";
+      a.click();
+    }
+  </script>
+</body>
+</html>
