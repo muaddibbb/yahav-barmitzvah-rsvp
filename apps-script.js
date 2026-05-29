@@ -3,7 +3,7 @@
 //  הוראות הגדרה מפורטות בקובץ README.md
 // ============================================================
 //  שים כאן את ה-ID של ה-Google Sheet שלך:
-const SHEET_ID = "1-fVanIQmku6p-gjIfmEBoownAmbalI5LHjTJtObjR7M";
+const SHEET_ID = "1IMlnkroglzxTXwPwI1WRY1xg06qqo6_soVucngtkPN4";
 const SHEET_NAME = "RSVPs";
 
 function getOrCreateSheet() {
@@ -25,7 +25,7 @@ function getOrCreateSheet() {
   return sheet;
 }
 
-// POST – קבלת אישור חדש
+// POST – קבלת אישור חדש או מחיקה
 function doPost(e) {
   const cors = ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -33,13 +33,19 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const sheet = getOrCreateSheet();
-    sheet.appendRow([
-      data.name || "",
-      data.attending === "yes" ? "מגיע" : "לא מגיע",
-      data.attending === "yes" ? (data.guests || 1) : 0,
-      data.notes || "",
-      data.timestamp || new Date().toLocaleString("he-IL"),
-    ]);
+
+    if (data.action === "delete" && typeof data.rowIndex === "number") {
+      // rowIndex הוא 0-based מהמערך; +2 בגלל שורת כותרת ואינדקס 1-based של שיטס
+      sheet.deleteRow(data.rowIndex + 2);
+    } else {
+      sheet.appendRow([
+        data.name || "",
+        data.attending === "yes" ? "מגיע" : "לא מגיע",
+        data.attending === "yes" ? (data.guests || 1) : 0,
+        data.notes || "",
+        data.timestamp || new Date().toLocaleString("he-IL"),
+      ]);
+    }
   } catch (err) {
     // שגיאה לא עוצרת את הפלט (CORS)
   }

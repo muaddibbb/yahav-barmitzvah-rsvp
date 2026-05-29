@@ -82,6 +82,7 @@
             <th>מספר אורחים</th>
             <th>הערות</th>
             <th>זמן הרשמה</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -89,6 +90,19 @@
     </div>
   </div>
 
+  <style>
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0.4;
+      transition: opacity 0.15s;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .delete-btn:hover { opacity: 1; background: #fee2e2; }
+  </style>
   <script src="config.js"></script>
   <script>
     let allRSVPs = [];
@@ -106,6 +120,25 @@
       } else {
         document.getElementById("loginError").style.display = "block";
       }
+    }
+
+    async function deleteRSVP(idx) {
+      const entry = allRSVPs[idx];
+      if (!entry) return;
+      if (!confirm(`למחוק את "${entry.name}"?`)) return;
+
+      // הסרה מקומית מיידית
+      allRSVPs.splice(idx, 1);
+      updateStats();
+      renderTable();
+
+      // שליחה לשרת
+      fetch(EVENT_CONFIG.scriptUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "delete", rowIndex: idx }),
+      });
     }
 
     async function loadRSVPs() {
@@ -145,11 +178,13 @@
 
     function renderTable() {
       const search = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = allRSVPs.filter((r) => {
-        const matchFilter = currentFilter === "all" || r.attending === currentFilter;
-        const matchSearch = r.name.toLowerCase().includes(search);
-        return matchFilter && matchSearch;
-      });
+      const filtered = allRSVPs
+        .map((r, i) => ({ ...r, _idx: i }))
+        .filter((r) => {
+          const matchFilter = currentFilter === "all" || r.attending === currentFilter;
+          const matchSearch = r.name.toLowerCase().includes(search);
+          return matchFilter && matchSearch;
+        });
 
       document.getElementById("loadingState").style.display = "none";
 
@@ -177,6 +212,7 @@
           <td class="cell-center">${r.attending === "yes" ? (r.guests || 1) : "—"}</td>
           <td class="cell-notes">${escHtml(r.notes || "")}</td>
           <td class="cell-time">${escHtml(r.timestamp || "")}</td>
+          <td class="cell-center"><button class="delete-btn" onclick="deleteRSVP(${r._idx})" title="מחק">🗑️</button></td>
         </tr>`
         )
         .join("");
