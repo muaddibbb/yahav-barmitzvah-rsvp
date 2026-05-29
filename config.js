@@ -12,6 +12,9 @@ const EVENT_CONFIG = {
   // לאחר פריסת Google Apps Script - הדבק כאן את ה-URL
   scriptUrl: "https://script.google.com/macros/s/AKfycbyru3QbIsK24n1aAoF3O8IubmmFX0iVLdFT1wV2bIEDdzhvHsHCg6VP8bKcPHQMLGqO/exec",
 
+  // ID של ה-Google Sheet (לקריאת נתונים ישירות)
+  sheetId: "1IMlnkroglzxTXwPwI1WRY1xg06qqo6_soVucngtkPN4",
+
   // סיסמת הדשבורד
   dashboardPassword: "admin1234",
 };

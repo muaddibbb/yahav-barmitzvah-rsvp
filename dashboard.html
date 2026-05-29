@@ -147,14 +147,26 @@
       document.getElementById("emptyState").style.display = "none";
 
       try {
-        const res = await fetch(EVENT_CONFIG.scriptUrl + "?action=get");
-        const data = await res.json();
-        allRSVPs = data.rows || [];
+        const url = `https://docs.google.com/spreadsheets/d/${EVENT_CONFIG.sheetId}/gviz/tq?tqx=out:json&sheet=RSVPs&headers=1`;
+        const res = await fetch(url);
+        const text = await res.text();
+        // Strip Google Visualization wrapper: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+        const json = JSON.parse(text.slice(text.indexOf("(") + 1, text.lastIndexOf(")")));
+        if (json.status !== "ok") throw new Error("sheet error");
+
+        allRSVPs = (json.table.rows || []).map(row => ({
+          name:      String(row.c[0]?.v || ""),
+          attending: String(row.c[1]?.v || "") === "מגיע" ? "yes" : "no",
+          guests:    row.c[2]?.v || 0,
+          notes:     String(row.c[3]?.v || ""),
+          timestamp: String(row.c[4]?.v || ""),
+        })).filter(r => r.name);
+
         updateStats();
         renderTable();
       } catch (err) {
         document.getElementById("loadingState").textContent =
-          "שגיאה בטעינת הנתונים. ודא שה-scriptUrl מוגדר נכון ב-config.js";
+          "שגיאה בטעינת הנתונים — ודא שהגיליון שותף כ״כל מי שיש לו את הקישור יכול לצפות״";
       }
     }
 
