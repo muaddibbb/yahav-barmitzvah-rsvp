@@ -3,7 +3,7 @@
 //  הוראות הגדרה מפורטות בקובץ README.md
 // ============================================================
 //  שים כאן את ה-ID של ה-Google Sheet שלך:
-const SHEET_ID = "YOUR_GOOGLE_SHEET_ID_HERE";
+const SHEET_ID = "1-fVanIQmku6p-gjIfmEBoownAmbalI5LHjTJtObjR7M";
 const SHEET_NAME = "RSVPs";
 
 function getOrCreateSheet() {

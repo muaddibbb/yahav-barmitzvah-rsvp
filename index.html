@@ -40,7 +40,7 @@
           <div class="detail-sub" id="detailAddress"></div>
         </div>
       </div>
-      <div class="detail-row" id="dressCodeRow">
+      <div class="detail-row" id="dressCodeRow" style="display:none">
         <span class="detail-icon">👔</span>
         <div>
           <div class="detail-label">לבוש</div>
@@ -126,7 +126,10 @@
     document.getElementById("detailTime").textContent = EVENT_CONFIG.time;
     document.getElementById("detailLocation").textContent = EVENT_CONFIG.location;
     document.getElementById("detailAddress").textContent = EVENT_CONFIG.address;
-    document.getElementById("detailDressCode").textContent = EVENT_CONFIG.dressCode;
+    if (EVENT_CONFIG.dressCode) {
+      document.getElementById("detailDressCode").textContent = EVENT_CONFIG.dressCode;
+      document.getElementById("dressCodeRow").style.display = "flex";
+    }
 
     if (EVENT_CONFIG.extraNote) {
       document.getElementById("detailExtraNote").textContent = EVENT_CONFIG.extraNote;
